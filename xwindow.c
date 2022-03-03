@@ -40,7 +40,6 @@ typedef struct {
 	XSetWindowAttributes attrs;
 	int scr;
 	int w, h;
-	int uw, uh; /* usable dimensions for drawing text and images */
 } XWindow;
 
 typedef union {
@@ -68,7 +67,7 @@ static void resize(int width, int height);
 static void run();
 static void usage();
 static void xhints();
-static void xinit();
+static void setup();
 
 static void bpress(XEvent *);
 static void cmessage(XEvent *);
@@ -80,12 +79,11 @@ static void configure(XEvent *);
 #include "config.h"
 
 /* Globals */
-static const char *fname = NULL;
 static XWindow xw;
 static Drw *drw;
 static Clr **scheme;
 static int running = 1;
-static int bh, blw = 0;      /* bar geometry */
+//static int bh, blw = 0;      /* bar geometry */
 static int lrpad;            /* sum of left and right padding for text */
 
 static void (*handler[LASTEvent])(XEvent *) = {
@@ -95,30 +93,6 @@ static void (*handler[LASTEvent])(XEvent *) = {
 	[Expose] = expose,
 	[KeyPress] = kpress,
 };
-
-int
-filter(int fd, const char *cmd)
-{
-	int fds[2];
-
-	if (pipe(fds) < 0)
-		die("xwindow: Unable to create pipe:");
-
-	switch (fork()) {
-	case -1:
-		die("xwindow: Unable to fork:");
-	case 0:
-		dup2(fd, 0);
-		dup2(fds[1], 1);
-		close(fds[0]);
-		close(fds[1]);
-		execlp("sh", "sh", "-c", cmd, (char *)0);
-		fprintf(stderr, "xwindow: execlp sh -c '%s': %s\n", cmd, strerror(errno));
-		_exit(1);
-	}
-	close(fds[1]);
-	return fds[0];
-}
 
 void
 cleanup()
@@ -145,11 +119,8 @@ resize(int width, int height)
 {
 	xw.w = width;
 	xw.h = height;
-	xw.uw = usablewidth * width;
-	xw.uh = usableheight * height;
 	drw_resize(drw, width, height);
 }
-
 
 void
 run()
@@ -192,7 +163,7 @@ xhints()
 }
 
 void
-xinit()
+setup()
 {
 	XTextProperty prop;
 	unsigned int i;
@@ -203,7 +174,11 @@ xinit()
 
 	xw.scr = XDefaultScreen(xw.dpy);
 	xw.vis = XDefaultVisual(xw.dpy, xw.scr);
-	resize(DisplayWidth(xw.dpy, xw.scr), DisplayHeight(xw.dpy, xw.scr));
+
+	if (!xw.w)
+		xw.w = winwidth;
+	if (!xw.h)
+		xw.h = winheight;
 
 	xw.attrs.bit_gravity = CenterGravity;
 	xw.attrs.event_mask = KeyPressMask | ExposureMask | StructureNotifyMask |
@@ -221,21 +196,16 @@ xinit()
 	if (!(drw = drw_create(xw.dpy, xw.scr, xw.win, xw.w, xw.h)))
 		die("xwindow: Unable to create drawing context");
 
+	/* init scheme */
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
 	for (i = 0; i < LENGTH(colors); i++)
-		scheme[i] = drw_scm_create(drw, colors[i], 3);
+		scheme[i] = drw_scm_create(drw, colors[i], 2);
 
-	//scheme = drw_scm_create(drw, colors, 2);
-
-	//drw_setscheme(drw, scheme[SchemeNorm]);
 	XSetWindowBackground(xw.dpy, xw.win, scheme[SchemeNorm][ColBg].pixel);
-	//XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
-
-	//xloadfonts();
 
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
 		die("no fonts could be loaded.");
-	//lrpad = drw->fonts->h;
+	lrpad = drw->fonts->h;
 
 	XStringListToTextProperty(&argv0, 1, &prop);
 	XSetWMName(xw.dpy, xw.win, &prop);
@@ -287,25 +257,12 @@ configure(XEvent *e)
 {
 	printf("configure\n");
 	resize(e->xconfigure.width, e->xconfigure.height);
-	//if (slides[idx].img)
-	//	slides[idx].img->state &= ~SCALED;
 }
 
 void
 usage()
 {
 	die("usage: %s [file]", argv0);
-}
-
-static void
-setup(void)
-{
-
-	//if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
-	//	die("no fonts could be loaded.");
-	//lrpad = drw->fonts->h;
-	//bh = drw->fonts->h + barh;
-	xinit();
 }
 
 int
@@ -321,21 +278,7 @@ main(int argc, char *argv[])
 		usage();
 	} ARGEND
 
-	//if (!argv[0] || !strcmp(argv[0], "-"))
-	//	fp = stdin;
-//	if (!argv[0]) {
-//		XSelectInput(xw.dpy, xw.win, ExposureMask | KeyPressMask);
-//		XMapWindow(xw.dpy, xw.win);
-//	}
-
-
-	//if (!(fp = fopen(fname = argv[0], "r")))
-	//	die("xwindow: Unable to open '%s' for reading:", fname);
-	//load(fp);
-	//fclose(fp);
-
 	setup();
-	//xinit();
 	run();
 
 	cleanup();

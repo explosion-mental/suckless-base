@@ -1,9 +1,8 @@
 /* See LICENSE file for copyright and license details. */
 
-/* how much screen estate is to be used at max for the content */
-static const float usablewidth = 0.75;
-static const float usableheight = 0.75;
-static char *fonts[] = {
+static const int winwidth  = 800;        /* default window width */
+static const int winheight = 600;        /* default window height */
+static const char *fonts[] = {
 	"Hack Nerd Font:pixelsize=12:antialias=true:autohint=true", /* Powerline */
 //	"SauceCodePro Nerd Font:pixelsize=14:antialias=true:autohint=true",
 //	"Noto Color Emoji:pixelsize=16:antialias=true:autohint=true: style=Regular", /* Emojis */
@@ -13,7 +12,7 @@ static char *fonts[] = {
 static const char *colors[][3] = {
       			/*  fg       bg     */
 	[SchemeNorm]  = { "#eeeeee", "#005577" },
-	[SchemeSel] = { "#bbbbbb", "#222222" },
+	[SchemeSel]   = { "#bbbbbb", "#222222" },
 };
 
 static Shortcut shortcuts[] = {
