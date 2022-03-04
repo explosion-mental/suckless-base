@@ -63,12 +63,12 @@ typedef struct {
 
 static void cleanup(void);
 static void quit(const Arg *arg);
-static void resize(int width, int height);
 static void run();
 static void usage();
 static void xhints();
 static void setup();
 
+/* X events */
 static void bpress(XEvent *);
 static void cmessage(XEvent *);
 static void expose(XEvent *);
@@ -115,27 +115,9 @@ quit(const Arg *arg)
 }
 
 void
-resize(int width, int height)
-{
-	xw.w = width;
-	xw.h = height;
-	drw_resize(drw, width, height);
-}
-
-void
 run()
 {
 	XEvent ev;
-
-	/* Waiting for window mapping */
-	while (1) {
-		XNextEvent(xw.dpy, &ev);
-		if (ev.type == ConfigureNotify) {
-			resize(ev.xconfigure.width, ev.xconfigure.height);
-		} else if (ev.type == MapNotify) {
-			break;
-		}
-	}
 
 	while (running) {
 		XNextEvent(xw.dpy, &ev);
@@ -255,8 +237,15 @@ kpress(XEvent *e)
 void
 configure(XEvent *e)
 {
-	printf("configure\n");
-	resize(e->xconfigure.width, e->xconfigure.height);
+	XConfigureEvent *ev = &e->xconfigure;
+	printf("Configure\n");
+
+	if (xw.w != ev->width || xw.h != ev->height) {
+		printf("Handling configurenotify (width: '%d', height: '%d')\n", ev->width, ev->height);
+		xw.w = ev->width;
+		xw.h = ev->height;
+		drw_resize(drw, xw.w, xw.h);
+	}
 }
 
 void
@@ -268,8 +257,6 @@ usage()
 int
 main(int argc, char *argv[])
 {
-	//FILE *fp = NULL;
-
 	ARGBEGIN {
 	case 'v':
 		fprintf(stderr, "xwindow-"VERSION"\n");
@@ -279,8 +266,10 @@ main(int argc, char *argv[])
 	} ARGEND
 
 	setup();
+
 	run();
 
 	cleanup();
+
 	return 0;
 }
