@@ -13,6 +13,7 @@ X11LIB = /usr/X11R6/lib
 # includes and libs
 INCS = -I. -I/usr/include -I/usr/include/freetype2 -I${X11INC}
 LIBS = -L/usr/lib -lc -lm -L${X11LIB} -lXft -lfontconfig -lX11
+
 # OpenBSD (uncomment)
 #INCS = -I. -I${X11INC} -I${X11INC}/freetype2
 # FreeBSD (uncomment)
@@ -21,10 +22,12 @@ LIBS = -L/usr/lib -lc -lm -L${X11LIB} -lXft -lfontconfig -lX11
 
 # flags
 CPPFLAGS = -DVERSION=\"${VERSION}\" -D_XOPEN_SOURCE=600
-CFLAGS += -g -std=c99 -pedantic -Wall -O0 ${INCS} ${CPPFLAGS}
-LDFLAGS += -g ${LIBS}
-#CFLAGS += -std=c99 -pedantic -Wall -Os ${INCS} ${CPPFLAGS}
-#LDFLAGS += ${LIBS}
+#CFLAGS = -std=c99 -pedantic -Wall -Os ${INCS} ${CPPFLAGS}
+#LDFLAGS = ${LIBS}
+
+#debug flags
+CFLAGS = -g -std=c99 -pedantic -Wall -O0 ${INCS} ${CPPFLAGS}
+LDFLAGS = -g ${LIBS}
 
 # compiler and linker
-CC ?= cc
+CC = cc

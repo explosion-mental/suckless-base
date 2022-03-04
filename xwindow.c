@@ -37,7 +37,6 @@ typedef struct {
 	Display *dpy;
 	Window win;
 	Visual *vis;
-	XSetWindowAttributes attrs;
 	int scr;
 	int w, h;
 } XWindow;
@@ -62,11 +61,12 @@ typedef struct {
 } Shortcut;
 
 static void cleanup(void);
+static void run(void);
+static void usage(void);
+static void xhints(void);
+static void setup(void);
+
 static void quit(const Arg *arg);
-static void run();
-static void usage();
-static void xhints();
-static void setup();
 
 /* X events */
 static void bpress(XEvent *);
@@ -78,7 +78,7 @@ static void configure(XEvent *);
 /* config.h for applying patches and the configuration. */
 #include "config.h"
 
-/* Globals */
+/* variables */
 static Atom atoms[WMLast];
 static XWindow xw;
 static Drw *drw;
@@ -96,7 +96,7 @@ static void (*handler[LASTEvent])(XEvent *) = {
 };
 
 void
-cleanup()
+cleanup(void)
 {
 	unsigned int i;
 
@@ -116,21 +116,22 @@ quit(const Arg *arg)
 }
 
 void
-run()
+run(void)
 {
 	XEvent ev;
 
+	/* main event loop */
 	while (running) {
 		XNextEvent(xw.dpy, &ev);
 		if (handler[ev.type])
-			(handler[ev.type])(&ev);
+			handler[ev.type](&ev); /* call handler */
 	}
 }
 
 void
-xhints()
+xhints(void)
 {
-	XClassHint class = {.res_name = "xwindow", .res_class = "presenter"};
+	XClassHint class = {.res_name = "xwindow", .res_class = "xwindow"};
 	XWMHints wm = {.flags = InputHint, .input = True};
 	XSizeHints *sizeh = NULL;
 
@@ -146,14 +147,14 @@ xhints()
 }
 
 void
-setup()
+setup(void)
 {
 	XTextProperty prop;
+	XSetWindowAttributes attrs;
 	unsigned int i;
 
 	if (!(xw.dpy = XOpenDisplay(NULL)))
 		die("xwindow: Unable to open display");
-
 
 	xw.scr = XDefaultScreen(xw.dpy);
 	xw.vis = XDefaultVisual(xw.dpy, xw.scr);
@@ -163,14 +164,14 @@ setup()
 	if (!xw.h)
 		xw.h = winheight;
 
-	xw.attrs.bit_gravity = CenterGravity;
-	xw.attrs.event_mask = KeyPressMask | ExposureMask | StructureNotifyMask |
+	attrs.bit_gravity = CenterGravity;
+	attrs.event_mask = KeyPressMask | ExposureMask | StructureNotifyMask |
 	                      ButtonMotionMask | ButtonPressMask;
 
 	xw.win = XCreateWindow(xw.dpy, XRootWindow(xw.dpy, xw.scr), 0, 0,
 	                       xw.w, xw.h, 0, XDefaultDepth(xw.dpy, xw.scr),
 	                       InputOutput, xw.vis, CWBitGravity | CWEventMask,
-	                       &xw.attrs);
+	                       &attrs);
 
 	atoms[WMDelete] = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
 	atoms[WMName]   = XInternAtom(xw.dpy, "_NET_WM_NAME", False);
@@ -250,7 +251,7 @@ configure(XEvent *e)
 }
 
 void
-usage()
+usage(void)
 {
 	die("usage: %s [file]", argv0);
 }
