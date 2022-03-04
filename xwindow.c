@@ -121,6 +121,7 @@ run(void)
 	XEvent ev;
 
 	/* main event loop */
+	XSync(xw.dpy, False);
 	while (running) {
 		XNextEvent(xw.dpy, &ev);
 		if (handler[ev.type])
@@ -197,7 +198,6 @@ setup(void)
 	XFree(prop.value);
 	XMapWindow(xw.dpy, xw.win);
 	xhints();
-	XSync(xw.dpy, False);
 }
 
 void
