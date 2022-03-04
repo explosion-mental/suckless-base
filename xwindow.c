@@ -30,12 +30,12 @@ char *argv0;
 #define TEXTW(X)          (drw_fontset_getwidth(drw, (X)) + lrpad)
 
 enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { WMDelete, WMName, WMLast }; /* atoms */
 
 /* Purely graphic info */
 typedef struct {
 	Display *dpy;
 	Window win;
-	Atom wmdeletewin, netwmname;
 	Visual *vis;
 	XSetWindowAttributes attrs;
 	int scr;
@@ -79,6 +79,7 @@ static void configure(XEvent *);
 #include "config.h"
 
 /* Globals */
+static Atom atoms[WMLast];
 static XWindow xw;
 static Drw *drw;
 static Clr **scheme;
@@ -171,9 +172,9 @@ setup()
 	                       InputOutput, xw.vis, CWBitGravity | CWEventMask,
 	                       &xw.attrs);
 
-	xw.wmdeletewin = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
-	xw.netwmname = XInternAtom(xw.dpy, "_NET_WM_NAME", False);
-	XSetWMProtocols(xw.dpy, xw.win, &xw.wmdeletewin, 1);
+	atoms[WMDelete] = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
+	atoms[WMName]   = XInternAtom(xw.dpy, "_NET_WM_NAME", False);
+	XSetWMProtocols(xw.dpy, xw.win, &atoms[WMDelete], 1);
 
 	if (!(drw = drw_create(xw.dpy, xw.scr, xw.win, xw.w, xw.h)))
 		die("xwindow: Unable to create drawing context");
@@ -191,7 +192,7 @@ setup()
 
 	XStringListToTextProperty(&argv0, 1, &prop);
 	XSetWMName(xw.dpy, xw.win, &prop);
-	XSetTextProperty(xw.dpy, xw.win, &prop, xw.netwmname);
+	XSetTextProperty(xw.dpy, xw.win, &prop, atoms[WMName]);
 	XFree(prop.value);
 	XMapWindow(xw.dpy, xw.win);
 	xhints();
@@ -211,7 +212,7 @@ bpress(XEvent *e)
 void
 cmessage(XEvent *e)
 {
-	if (e->xclient.data.l[0] == xw.wmdeletewin)
+	if (e->xclient.data.l[0] == atoms[WMDelete])
 		running = 0;
 }
 
