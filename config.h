@@ -23,8 +23,8 @@ static Shortcut shortcuts[] = {
 
 static Mousekey mshortcuts[] = {
 	/* button         function        argument */
-	{ Button1,        quit,        {0} },
+	//{ Button1,        quit,        {0} },
 	{ Button3,        quit,        {0} },
-	{ Button4,        quit,        {0} },
-	{ Button5,        quit,        {0} },
+	//{ Button4,        quit,        {0} },
+	//{ Button5,        quit,        {0} },
 };

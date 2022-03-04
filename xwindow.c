@@ -75,9 +75,6 @@ static void expose(XEvent *);
 static void kpress(XEvent *);
 static void configure(XEvent *);
 
-/* config.h for applying patches and the configuration. */
-#include "config.h"
-
 /* variables */
 static Atom atoms[WMLast];
 static XWindow xw;
@@ -86,6 +83,9 @@ static Clr **scheme;
 static int running = 1;
 //static int bh, blw = 0;      /* bar geometry */
 static int lrpad;            /* sum of left and right padding for text */
+
+/* config.h for applying patches and the configuration. */
+#include "config.h"
 
 static void (*handler[LASTEvent])(XEvent *) = {
 	[ButtonPress] = bpress,
