@@ -35,14 +35,6 @@ enum { SchemeNorm, SchemeBar }; /* color schemes */
 enum { WMDelete, WMName, WMLast }; /* atoms */
 
 /* Purely graphic info */
-typedef struct {
-	Display *dpy;
-	Window win;
-	Visual *vis;
-	int scr;
-	int w, h;
-} XWindow;
-
 typedef union {
 	int i;
 	unsigned int ui;
@@ -82,12 +74,14 @@ static void configure(XEvent *);
 /* variables */
 static Atom atoms[WMLast];
 static char right[128], left[128];
-static XWindow xw;
 static Drw *drw;
 static Clr **scheme;
 static int running = 1;
 static int bh = 0;      /* bar geometry */
-static int lrpad;            /* sum of left and right padding for text */
+static int lrpad;       /* sum of left and right padding for text */
+static Display *dpy;
+static Window win;
+static int winw, winh;
 
 /* config.h for applying patches and the configuration. */
 #include "config.h"
@@ -109,9 +103,9 @@ cleanup(void)
 		free(scheme[i]);
 	free(scheme);
 	drw_free(drw);
-	XDestroyWindow(xw.dpy, xw.win);
-	XSync(xw.dpy, False);
-	XCloseDisplay(xw.dpy);
+	XDestroyWindow(dpy, win);
+	XSync(dpy, False);
+	XCloseDisplay(dpy);
 }
 
 void
@@ -125,14 +119,14 @@ togglebar(const Arg *arg)
 {
 	showbar = !showbar;
 	if (showbar) {
-		xw.h -= bh;
+		winh -= bh;
 		printf("BAR IS ON\n");
 	} else {
-		xw.h += bh;
+		winh += bh;
 		printf("bar is off\n");
 	}
-	XClearWindow(xw.dpy, xw.win);
-	XSync(xw.dpy, False);
+	XClearWindow(dpy, win);
+	XSync(dpy, False);
 	drawbar();
 }
 
@@ -145,7 +139,7 @@ drawbar(void)
 		return;
 
 	/* currently topbar is not supported */
-	y = xw.h - bh;
+	y = winh - bh;
 
 	drw_setscheme(drw, scheme[SchemeBar]);
 
@@ -161,15 +155,15 @@ drawbar(void)
 	strftime(buffer, sizeof(buffer), "Today is %A, %B %d..", info);
 
 	snprintf(left, LENGTH(left), "%s", buffer);
-	drw_text(drw, 0, y, xw.w / 2, bh, lrpad / 2, left, 0);
+	drw_text(drw, 0, y, winw / 2, bh, lrpad / 2, left, 0);
 
 	/* right text */
 	char str[] = "..And is a good day!";
 	snprintf(right, LENGTH(right), "%s", str);
 	tw = TEXTW(right) - lrpad + 2; /* 2px right padding */
-	drw_text(drw, xw.w/2, y, xw.w/2, bh, xw.w/2 - (tw + lrpad / 2), right, 0);
+	drw_text(drw, winw/2, y, winw/2, bh, winw/2 - (tw + lrpad / 2), right, 0);
 
-	drw_map(drw, xw.win, 0, y, xw.w, bh);
+	drw_map(drw, win, 0, y, winw, bh);
 }
 
 void
@@ -178,9 +172,9 @@ run(void)
 	XEvent ev;
 
 	/* main event loop */
-	XSync(xw.dpy, False);
+	XSync(dpy, False);
 	while (running) {
-		XNextEvent(xw.dpy, &ev);
+		XNextEvent(dpy, &ev);
 		if (handler[ev.type])
 			handler[ev.type](&ev); /* call handler */
 	}
@@ -197,10 +191,10 @@ xhints(void)
 		die("xwindow: Unable to allocate size hints");
 
 	sizeh->flags = PSize;
-	sizeh->height = xw.h;
-	sizeh->width = xw.w;
+	sizeh->height = winh;
+	sizeh->width = winw;
 
-	XSetWMProperties(xw.dpy, xw.win, NULL, NULL, NULL, 0, sizeh, &wm, &class);
+	XSetWMProperties(dpy, win, NULL, NULL, NULL, 0, sizeh, &wm, &class);
 	XFree(sizeh);
 }
 
@@ -210,35 +204,36 @@ setup(void)
 	XTextProperty prop;
 	XSetWindowAttributes attrs;
 	unsigned int i;
+	Visual *visual;
+	int screen;
 
-	if (!(xw.dpy = XOpenDisplay(NULL)))
+	if (!(dpy = XOpenDisplay(NULL)))
 		die("xwindow: Unable to open display");
 
 	/* init screen */
-	xw.scr = XDefaultScreen(xw.dpy);
-	xw.vis = XDefaultVisual(xw.dpy, xw.scr);
+	screen = XDefaultScreen(dpy);
+	visual = XDefaultVisual(dpy, screen);
 
-	if (!xw.w)
-		xw.w = winwidth;
-	if (!xw.h)
-		xw.h = winheight;
+	if (!winw)
+		winw = winwidth;
+	if (!winh)
+		winh = winheight;
 
 	attrs.bit_gravity = CenterGravity;
 	attrs.event_mask = KeyPressMask | ExposureMask | StructureNotifyMask |
 	                      ButtonMotionMask | ButtonPressMask;
 
 	/* init window */
-	xw.win = XCreateWindow(xw.dpy, XRootWindow(xw.dpy, xw.scr), 0, 0,
-	                       xw.w, xw.h, 0, XDefaultDepth(xw.dpy, xw.scr),
-	                       InputOutput, xw.vis, CWBitGravity | CWEventMask,
-	                       &attrs);
+	win = XCreateWindow(dpy, XRootWindow(dpy, screen), 0, 0,
+		winw, winh, 0, XDefaultDepth(dpy, screen), InputOutput,
+		visual, CWBitGravity | CWEventMask, &attrs);
 
 	/* init atoms */
-	atoms[WMDelete] = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
-	atoms[WMName]   = XInternAtom(xw.dpy, "_NET_WM_NAME", False);
-	XSetWMProtocols(xw.dpy, xw.win, &atoms[WMDelete], 1);
+	atoms[WMDelete] = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+	atoms[WMName]   = XInternAtom(dpy, "_NET_WM_NAME", False);
+	XSetWMProtocols(dpy, win, &atoms[WMDelete], 1);
 
-	if (!(drw = drw_create(xw.dpy, xw.scr, xw.win, xw.w, xw.h)))
+	if (!(drw = drw_create(dpy, screen, win, winw, winh)))
 		die("xwindow: Unable to create drawing context");
 
 	/* init appearance */
@@ -246,7 +241,7 @@ setup(void)
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], 2);
 
-	XSetWindowBackground(xw.dpy, xw.win, scheme[SchemeNorm][ColBg].pixel);
+	XSetWindowBackground(dpy, win, scheme[SchemeNorm][ColBg].pixel);
 
 	/* init fonts */
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
@@ -258,10 +253,10 @@ setup(void)
 	drawbar();
 
 	XStringListToTextProperty(&argv0, 1, &prop);
-	XSetWMName(xw.dpy, xw.win, &prop);
-	XSetTextProperty(xw.dpy, xw.win, &prop, atoms[WMName]);
+	XSetWMName(dpy, win, &prop);
+	XSetTextProperty(dpy, win, &prop, atoms[WMName]);
 	XFree(prop.value);
-	XMapWindow(xw.dpy, xw.win);
+	XMapWindow(dpy, win);
 	xhints();
 }
 
@@ -292,7 +287,7 @@ expose(XEvent *e)
 	printf("XEVENT Expose\n");
 	if (0 == e->xexpose.count) {
 		printf("Handling expose '%d'\n", e->xexpose.count);
-		XClearWindow(xw.dpy, xw.win);
+		XClearWindow(dpy, win);
 		drawbar();
 	}
 }
@@ -303,7 +298,7 @@ kpress(XEvent *e)
 	unsigned int i;
 	KeySym sym;
 
-	sym = XkbKeycodeToKeysym(xw.dpy, (KeyCode)e->xkey.keycode, 0, 0);
+	sym = XkbKeycodeToKeysym(dpy, (KeyCode)e->xkey.keycode, 0, 0);
 	printf("\tkeypress '%s'\n", XKeysymToString(sym));
 	for (i = 0; i < LENGTH(shortcuts); i++)
 		if (sym == shortcuts[i].keysym && shortcuts[i].func)
@@ -316,11 +311,11 @@ configure(XEvent *e)
 	XConfigureEvent *ev = &e->xconfigure;
 	printf("Configure\n");
 
-	if (xw.w != ev->width || xw.h != ev->height) {
+	if (winw != ev->width || winh != ev->height) {
 		printf("Handling configurenotify (width: '%d', height: '%d')\n", ev->width, ev->height);
-		xw.w = ev->width;
-		xw.h = ev->height;
-		drw_resize(drw, xw.w, xw.h + bh);
+		winw = ev->width;
+		winh = ev->height;
+		drw_resize(drw, winw, winh + bh);
 	}
 }
 
