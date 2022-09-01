@@ -21,10 +21,11 @@ char *argv0;
 #define LENGTH(X)         (sizeof(X) / sizeof(X)[0])
 #define TEXTW(X)          (drw_fontset_getwidth(drw, (X)) + lrpad)
 
+/* enums */
 enum { SchemeNorm, SchemeBar }; /* color schemes */
 enum { WMDelete, WMName, WMLast }; /* atoms */
 
-/* Purely graphic info */
+/* types and structs */
 typedef union {
 	int i;
 	unsigned int ui;
@@ -34,13 +35,13 @@ typedef union {
 
 typedef struct {
 	unsigned int b;
-	void (*func)(const Arg *);
+	void (*func)(const Arg *arg);
 	const Arg arg;
 } Mousekey;
 
 typedef struct {
 	KeySym keysym;
-	void (*func)(const Arg *);
+	void (*func)(const Arg *arg);
 	const Arg arg;
 } Shortcut;
 
@@ -55,11 +56,11 @@ static void quit(const Arg *arg);
 static void togglebar(const Arg *arg);
 
 /* X events */
-static void buttonpress(XEvent *);
-static void clientmessage(XEvent *);
-static void expose(XEvent *);
-static void keypress(XEvent *);
-static void configurenotify(XEvent *);
+static void buttonpress(XEvent *e);
+static void clientmessage(XEvent *e);
+static void expose(XEvent *e);
+static void keypress(XEvent *e);
+static void configurenotify(XEvent *e);
 
 /* variables */
 static Atom atoms[WMLast];
@@ -77,7 +78,7 @@ static int winy;        /* window height - bar height */
 /* config.h for applying patches and the configuration. */
 #include "config.h"
 
-static void (*handler[LASTEvent])(XEvent *) = {
+static void (*handler[LASTEvent])(XEvent *e) = {
 	[ButtonPress] = buttonpress,
 	[ClientMessage] = clientmessage,
 	[ConfigureNotify] = configurenotify,
