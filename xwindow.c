@@ -3,22 +3,12 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 
-#include <errno.h>
-#include <fcntl.h>
-#include <math.h>
-#include <regex.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-#include <X11/keysym.h>
 #include <X11/XKBlib.h>
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
 
 #include "arg.h"
