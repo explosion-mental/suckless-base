@@ -3,12 +3,7 @@
 static int showbar         = 1;          /* 0 means no bar */
 static const int winwidth  = 800;        /* default window width */
 static const int winheight = 600;        /* default window height */
-static const char *fonts[] = {
-	"Hack Nerd Font:pixelsize=12:antialias=true:autohint=true", /* Powerline */
-//	"SauceCodePro Nerd Font:pixelsize=14:antialias=true:autohint=true",
-//	"Noto Color Emoji:pixelsize=16:antialias=true:autohint=true: style=Regular", /* Emojis */
-	"JoyPixels:pixelsize=14:antialias=true:autohint=true"
-};
+static const char *fonts[] = { "monospace" };
 
 static const char *colors[][3] = {
       			/*  fg       bg     */
