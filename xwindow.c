@@ -73,15 +73,16 @@ static void configure(XEvent *);
 
 /* variables */
 static Atom atoms[WMLast];
-static char right[128], left[128];
-static Drw *drw;
 static Clr **scheme;
-static int running = 1;
-static int bh = 0;      /* bar geometry */
-static int lrpad;       /* sum of left and right padding for text */
+static Drw *drw;
 static Display *dpy;
 static Window win;
-static int winw, winh;
+static char right[128], left[128]; /* bar buf */
+static int bh = 0;      /* bar geometry */
+static int running = 1;
+static int lrpad;       /* sum of left and right padding for text */
+static int winw, winh;  /* window size */
+static int winy;        /* window height - bar height */
 
 /* config.h for applying patches and the configuration. */
 #include "config.h"
