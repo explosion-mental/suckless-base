@@ -55,11 +55,11 @@ static void quit(const Arg *arg);
 static void togglebar(const Arg *arg);
 
 /* X events */
-static void bpress(XEvent *);
-static void cmessage(XEvent *);
+static void buttonpress(XEvent *);
+static void clientmessage(XEvent *);
 static void expose(XEvent *);
-static void kpress(XEvent *);
-static void configure(XEvent *);
+static void keypress(XEvent *);
+static void configurenotify(XEvent *);
 
 /* variables */
 static Atom atoms[WMLast];
@@ -78,11 +78,11 @@ static int winy;        /* window height - bar height */
 #include "config.h"
 
 static void (*handler[LASTEvent])(XEvent *) = {
-	[ButtonPress] = bpress,
-	[ClientMessage] = cmessage,
-	[ConfigureNotify] = configure,
+	[ButtonPress] = buttonpress,
+	[ClientMessage] = clientmessage,
+	[ConfigureNotify] = configurenotify,
 	[Expose] = expose,
-	[KeyPress] = kpress,
+	[KeyPress] = keypress,
 };
 
 void
@@ -247,7 +247,7 @@ setup(void)
 }
 
 void
-bpress(XEvent *e)
+buttonpress(XEvent *e)
 {
 	unsigned int i;
 
@@ -258,7 +258,7 @@ bpress(XEvent *e)
 }
 
 void
-cmessage(XEvent *e)
+clientmessage(XEvent *e)
 {
 	printf("XEVENT ClientMessage\n");
 	if (e->xclient.data.l[0] == atoms[WMDelete]) {
@@ -279,7 +279,7 @@ expose(XEvent *e)
 }
 
 void
-kpress(XEvent *e)
+keypress(XEvent *e)
 {
 	unsigned int i;
 	KeySym sym;
@@ -292,7 +292,7 @@ kpress(XEvent *e)
 }
 
 void
-configure(XEvent *e)
+configurenotify(XEvent *e)
 {
 	XConfigureEvent *ev = &e->xconfigure;
 	printf("Configure\n");
