@@ -28,7 +28,7 @@
 char *argv0;
 
 /* macros */
-#define LENGTH(a)         (sizeof(a) / sizeof(a)[0])
+#define LENGTH(X)         (sizeof(X) / sizeof(X)[0])
 #define TEXTW(X)          (drw_fontset_getwidth(drw, (X)) + lrpad)
 
 enum { SchemeNorm, SchemeBar }; /* color schemes */
