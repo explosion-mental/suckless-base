@@ -335,17 +335,16 @@ main(int argc, char *argv[])
 {
 	ARGBEGIN {
 	case 'v':
-		fprintf(stderr, "xwindow-"VERSION"\n");
-		return 0;
+		die("xwindow-"VERSION);
+		break;
 	default:
 		usage();
+		break;
 	} ARGEND
 
 	setup();
-
 	run();
-
 	cleanup();
 
-	return 0;
+	return EXIT_SUCCESS;
 }
