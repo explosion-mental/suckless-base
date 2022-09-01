@@ -119,28 +119,23 @@ void
 togglebar(const Arg *arg)
 {
 	showbar = !showbar;
-	if (showbar) {
-		winh -= bh;
-		printf("BAR IS ON\n");
-	} else {
-		winh += bh;
-		printf("bar is off\n");
-	}
+	if (showbar)
+		bh = drw->fonts->h + 2; /* two pixel padding */
+	else
+		bh = 0;
 	XClearWindow(dpy, win);
-	XSync(dpy, False);
 	drawbar();
 }
 
 void
 drawbar(void)
 {
-	int y, tw = 0;
+	int tw = 0;
+
+	winy = winh - bh;
 
 	if (!showbar)
 		return;
-
-	/* currently topbar is not supported */
-	y = winh - bh;
 
 	drw_setscheme(drw, scheme[SchemeBar]);
 
@@ -156,15 +151,15 @@ drawbar(void)
 	strftime(buffer, sizeof(buffer), "Today is %A, %B %d..", info);
 
 	snprintf(left, LENGTH(left), "%s", buffer);
-	drw_text(drw, 0, y, winw / 2, bh, lrpad / 2, left, 0);
+	drw_text(drw, 0, winy, winw / 2, bh, lrpad / 2, left, 0);
 
 	/* right text */
 	char str[] = "..And is a good day!";
 	snprintf(right, LENGTH(right), "%s", str);
 	tw = TEXTW(right) - lrpad + 2; /* 2px right padding */
-	drw_text(drw, winw/2, y, winw/2, bh, winw/2 - (tw + lrpad / 2), right, 0);
+	drw_text(drw, winw/2, winy, winw/2, bh, winw/2 - (tw + lrpad / 2), right, 0);
 
-	drw_map(drw, win, 0, y, winw, bh);
+	drw_map(drw, win, 0, winy, winw, bh);
 }
 
 void
@@ -172,8 +167,8 @@ run(void)
 {
 	XEvent ev;
 
-	/* main event loop */
 	XSync(dpy, False);
+	/* main event loop */
 	while (running) {
 		XNextEvent(dpy, &ev);
 		if (handler[ev.type])
@@ -234,6 +229,7 @@ setup(void)
 	atoms[WMName]   = XInternAtom(dpy, "_NET_WM_NAME", False);
 	XSetWMProtocols(dpy, win, &atoms[WMDelete], 1);
 
+	/* init drw */
 	if (!(drw = drw_create(dpy, screen, win, winw, winh)))
 		die("xwindow: Unable to create drawing context");
 
@@ -241,16 +237,15 @@ setup(void)
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], 2);
-
 	XSetWindowBackground(dpy, win, scheme[SchemeNorm][ColBg].pixel);
 
 	/* init fonts */
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
 		die("no fonts could be loaded.");
 	lrpad = drw->fonts->h;
-	bh = drw->fonts->h + 2; /* two pixel padding */
 
 	/* init bar */
+	bh = drw->fonts->h + 2; /* two pixel padding */
 	drawbar();
 
 	XStringListToTextProperty(&argv0, 1, &prop);
@@ -316,7 +311,7 @@ configure(XEvent *e)
 		printf("Handling configurenotify (width: '%d', height: '%d')\n", ev->width, ev->height);
 		winw = ev->width;
 		winh = ev->height;
-		drw_resize(drw, winw, winh + bh);
+		drw_resize(drw, winw, winh);
 	}
 }
 
